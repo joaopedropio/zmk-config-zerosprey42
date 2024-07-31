@@ -9,10 +9,18 @@
 
 / {
     chosen {
-        zmk,kscan = &kscan0;
+        zmk,kscan = &mock_kscan;
         zmk,matrix_transform = &default_transform;
-	/delete-property/ zephyr,console;
-	/delete-property/ zephyr,shell-uart;
+        /delete-property/ zephyr,console;
+	    /delete-property/ zephyr,shell-uart;
+        zephyr,display = &st7789v;
+    };
+
+    mock_kscan: kscan_0 {
+        compatible = "zmk,kscan-mock";
+        columns = <0>;
+        rows = <0>;
+        events = <0>;
     };
 
     default_transform: keymap_transform_0 {
@@ -26,31 +34,54 @@
                                     RC(6,0) RC(6,1) RC(6,2)      RC(6,3) RC(6,4) RC(6,5)
         >;
     };
-
-    kscan0: kscan_0 {
-        compatible = "zmk,kscan-gpio-matrix";
-        label = "KSCAN";
-        diode-direction = "col2row";
-
-        col-gpios
-            = <&gpio0 15 GPIO_ACTIVE_HIGH>
-            , <&gpio0 26 GPIO_ACTIVE_HIGH>
-            , <&gpio0 27 GPIO_ACTIVE_HIGH>
-            , <&gpio0 4  GPIO_ACTIVE_HIGH>
-            , <&gpio0 5  GPIO_ACTIVE_HIGH>
-            , <&gpio0 6  GPIO_ACTIVE_HIGH>
-
-            ;
-
-        row-gpios
-            = <&gpio0 7  (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-            , <&gpio0 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-            , <&gpio0 12 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-            , <&gpio0 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-            , <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-            , <&gpio0 9  (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-            , <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
-            ;
-    };
 };
 
+&pinctrl {
+	spi1_default: spi1_default {
+		group1 {
+            pinmux = <SPI1_SCK_P10>, <SPI1_TX_P11>;
+		};
+	};
+
+	spi1_sleep: spi1_sleep {
+		group1 {
+            pinmux = <SPI1_SCK_P10>, <SPI1_TX_P11>;
+		};
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+ 	pinctrl-1 = <&spi1_sleep>;
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default", "sleep";
+	
+	st7789v: st7789v@0 {
+		compatible = "sitronix,st7789v";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		width = <320>;
+		height = <240>;
+		x-offset = <0>;
+		y-offset = <0>;
+		vcom = <0x19>;
+		gctrl = <0x35>;
+		vrhs = <0x12>;
+		vdvs = <0x20>;
+		vdvs = <0x20>;
+		mdac = <0x00>;
+		lcm = <0x2c>;
+		colmod = <0x05>;
+		gamma = <0x01>;
+		porch-param = [0c 0c 00 33 33];
+		cmd2en-param = [5a 69 02 01];
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+		nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+		ram-param = [00 F0];
+		rgb-param = [CD 08 14];
+	};
+};
